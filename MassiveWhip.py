@@ -32,13 +32,14 @@ def is_eligible_to_whip():
         return vedeniRole in ctx.author.roles
     return commands.check(predicate)
 
-async def getUnsignedRaiders(ctx):
+async def getUnsignedMembers(ctx):
     lookBackInDays = { 0 : 1, 1 : 2, 2 : 1, 3 : 2, 4 : 1, 5 : 2, 6 : 3 }
     now = datetime.utcnow()
     after = now - timedelta(days = lookBackInDays[now.weekday()], hours = now.hour)
 
     raiderRole = await commands.RoleConverter().convert(ctx, 'raider')
-    allRaiders = set(raiderRole.members)
+    clenRole = await commands.RoleConverter().convert(ctx, 'clen')
+    allRaiders = set(raiderRole.members + clenRole.members)
     unsignedRaiders = set()
     
     async for msg in ctx.channel.history(after=after):
@@ -57,21 +58,21 @@ async def getUnsignedRaiders(ctx):
     
     return unsignedRaiders
 
-async def getUnsignedRaidersMsg(ctx, mention=True):
-    unsignedRaiders = await getUnsignedRaiders(ctx)
+async def getUnsignedMembersMsg(ctx, mention=True):
+    unsignedRaiders = await getUnsignedMembers(ctx)
     if not unsignedRaiders:
-        msg = 'Everyone is signed. As the master wishes.'
+        msg = [ 'Everyone is signed. As the master wishes.' ]
     else:
-        msg = 'Hmmm, you\'re in trouble now. Sign for raid!\n'
+        msg = [ 'Hmmm, you\'re in trouble now. Sign for raid!\n' ] 
     for ur in unsignedRaiders:
-        msg += ur.mention if mention else ur.display_name + ' '
+        msg.extend([ ur.mention if mention else ur.display_name , ' ' ])
         
-    return msg
+    return ''.join(msg)
     
 @bot.command(name='whipHere', help='Whip lash all unsigned members in this channel\'s recent events.')
 @is_eligible_to_whip()
 async def whipHere(ctx):
-    msg = await getUnsignedRaidersMsg(ctx)
+    msg = await getUnsignedMembersMsg(ctx)
 
     await ctx.message.delete()
     await ctx.send(msg)
@@ -79,8 +80,9 @@ async def whipHere(ctx):
 @bot.command(name='whipHereTest', help='Whip lash all unsigned members in this channel\'s recent events. Sent as DM.')
 @is_eligible_to_whip()
 async def whipHereTest(ctx):
-    msg = await getUnsignedRaidersMsg(ctx, mention=False)
+    msg = await getUnsignedMembersMsg(ctx, mention=False)
 
+    print(ctx.author.name)
     await ctx.message.delete()
     await ctx.author.send(msg)
     
@@ -117,7 +119,7 @@ async def newCouncil(ctx):
         council.append(row)
     
     table = tabulate(council, headers=["Vedeni", "CoreRaiders"])
-    msg = '```New loot council \n\n' + table + '```'
+    msg = ''.join([ '```New loot council \n\n' , table , '```' ])
  
     await ctx.message.delete()
     await ctx.send(msg)    
