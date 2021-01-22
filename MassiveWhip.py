@@ -51,7 +51,7 @@ async def getUnsignedMembers(ctx):
             signedRaidersSet = set()
             for u in signedUsersSet:
                 signedMember = ctx.guild.get_member(u.id)
-                if raiderRole in signedMember.roles:
+                if raiderRole in signedMember.roles or clenRole in signedMember.roles:
                     signedRaidersSet.add(signedMember)          
 
             unsignedRaiders.update(allRaiders.difference(signedRaidersSet))
